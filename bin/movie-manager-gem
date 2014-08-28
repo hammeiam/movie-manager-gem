@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+#Dir[File.join(File.dirname(__FILE__),  'lib', '*.rb')].each {|file| require file }
+
+require_relative '../lib/movie-manager-gem'
+
+session = MovieManagerGem::Finder.new
+session.update_directories_status
+
+puts "Welcome to DH Movie Manager"
+puts "Type your command, 'exit' to leave, or 'help' to get started..."
+puts ""
+puts "First time? Type 'start' and drag & drop the folder that contains your movies" if !session.initialized?
+puts "eg 'start /Users/me/Movies'" if !session.initialized?
+
+#command = []
+while true
+	print '> '
+	command = $stdin.gets.chomp.split
+
+	if command[0] == 'start'
+		session.find_files_in(command[1..-1].join.gsub("\\", " "))
+
+	elsif command[0] == 'search'
+		if command[1] == 'movies'
+			session.list_all_movies(command[2]?command[2]:-1) # sets a default value of -1 for empty rating arguments
+
+		elsif command[1] == 'actor'
+			if command[-1] =~ /[0-9]+/
+				session.list_movies_with_actor(command[2..-2].join(" "), command[-1])
+			else
+				session.list_movies_with_actor(command[2..-1].join(" "))
+			end
+		elsif command[1] == 'director'
+			if command[-1] =~ /[0-9]+/
+				session.list_movies_with_director(command[2..-2].join(" "), command[-1])
+			else
+				session.list_movies_with_director(command[2..-1].join(" "))
+			end
+		elsif command[1] == 'genre'
+			if command[-1] =~ /[0-9]+/
+				session.list_movies_by_genre(command[2..-2].join(" "), command[-1])
+			else
+				session.list_movies_by_genre(command[2..-1].join(" "))
+			end
+		end
+
+	elsif command[0] == 'play' 
+		if command[1] == 'unseen'	# distinguish btw the 'play' and 'play unseen genre' functions
+			if command[-1] =~ /[0-9]+/
+				session.play_unseen_genre(command[2..-2].join(" "), command[-1])
+			else
+				session.play_unseen_genre(command[2..-1].join(" "))
+			end
+		else
+			session.play(command[1])
+		end
+
+	elsif command[0] == 'update' 
+		if command[1] == 'watched'	# distinguish btw update watched and update file names functions
+			session.update_watched_list
+		elsif command[1] == 'file' && command[2] == 'names'
+			session.update_file_names
+		end
+
+	elsif command[0] == 'help'
+		puts ""
+		puts "--- Below are a list of valid commands. Brackets [] indicate user input. ---"
+		puts ""
+		puts "'start [file path]' drag and drop in the folder that holds your movies to add them to the database"
+		puts ""
+		puts "'search actor [name] [rating (optional)]' returns a list of actors with the given name"
+		puts "'search director [name] [rating (optional)]' returns a list of directors with the given name"
+		puts "'search genre [genre] [rating (optional)]' returns a list of movies with the given genre"
+		puts "'search movies [rating]' returns a list of all movies with a RottenTomatoes Audience Score above [rating]"
+		puts ""
+		puts "'play [title]' plays movie with the given title"
+		puts "'play unseen [genre] [rating (optional)]' plays random movie that you haven't seen from the given genre"
+		puts ""
+		puts "'update watched' user will be asked which movies they have seen. This improves the 'play unseen [genre] function."
+		puts "'update file names' user can choose to update movie file names with the correct titles"
+		puts ""
+		puts "Examples:"
+		puts "search actor Stallone 60 (note that first or last names can be used. Min movie rating is optional)"
+		puts "play finding nemo (note that names and title searches can be more than 1 word long)"
+		puts "play unseen com (note that partial searches for names and genres are allowed. This will play a comedy)" 
+		puts ""
+		puts "--- end of help ---"
+
+			
+	elsif command[0] == 'exit'
+		print 'Bye '
+		system("echo $USER!")
+		break
+
+	else
+		puts "Does not compute. Type 'help' for a list of valid commands."
+	end
+end
