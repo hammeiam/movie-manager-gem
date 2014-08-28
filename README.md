@@ -9,7 +9,7 @@ Feeling indecisive? use the 'play unseen [genre]' command to play a random movie
 
 Add this line to your application's Gemfile:
 
-    gem 'movie_manager_gem'
+    gem 'movie-manager-gem'
 
 And then execute:
 
@@ -17,7 +17,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install movie_manager_gem
+    $ gem install movie-manager-gem
 
 ## Getting Started
 
