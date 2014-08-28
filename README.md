@@ -30,27 +30,44 @@ To begin, drag and drop in the folder that holds your movies to add them to the 
 		start [file path]
 
 Return a list of actors with the given name:
-		search actor [name] [rating (optional)]		
+
+		search actor [name] [rating (optional)]	
+
 Return a list of directors with the given name:
+
 		search director [name] [rating (optional)]
+
 Return a list of movies with the given genre:
+
 		search genre [genre] [rating (optional)]	
+
 Return a list of all movies with a RottenTomatoes Audience Score above [rating]:	
+
 		search movies [rating]' 											
 
+
 Play a movie with the given title:
+
 		play [title]
+
 Play a random movie that you haven't seen from the given genre:
+
 		play unseen [genre] [rating (optional)]
 
+
 User will be asked which movies they have seen. This improves the 'play unseen [genre] function:
+
 		update watched			
+
 User can choose to update movie file names with the correct titles:
+
 		update file names 	
+
+
 Tips:
--- rating is an optional argument
--- partial searches (eg com vs comedy) can be used
--- searches can be multiple words (eg 'search actor Gary Oldman 60')
+-Rating is an optional argument
+-Partial searches (eg com vs comedy) can be used
+-Searches can be multiple words (eg 'search actor Gary Oldman 60')
 
 ## Contributing
 
