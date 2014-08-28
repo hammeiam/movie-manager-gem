@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{A command line tool for organizing local movie files. }
   spec.description   = %q{DH Movie Manager finds local movie files, queries Rotten Tomatoes, and stores the data in a sqlite3 database that you can use to run commands. Search for specific actors, directors, and genres. Filter results by audience score. Update your filenames to reflect the correct title. 
 Feeling indecisive? use the 'play unseen [genre]' command to play a random movie that suits your mood.}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/hammeiam/movie-manager-gem"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
