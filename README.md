@@ -19,14 +19,17 @@ Or install it yourself as:
 
     $ gem install movie_manager_gem
 
+## Getting Started
+
+From your home directory, simply run:
+
+		movie-manager-gem 
+
 ## Usage
-
-From your home directory, simply run 'movie-manager-gem'
-That's it. 
-
-Below are a list of valid commands. Brackets [ ] indicate user input.
+Below are a list of valid commands. Brackets indicate user input (don't use brackets when inputing arguments).
 
 To begin, drag and drop in the folder that holds your movies to add them to the database:
+
 		start [file path]
 
 Return a list of actors with the given name:
