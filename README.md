@@ -21,26 +21,36 @@ Or install it yourself as:
 
 ## Usage
 
---- Below are a list of valid commands. Brackets [] indicate user input. ---
+From your home directory, simply run 'movie-manager-gem'
+That's it. 
 
-'start [file path]' drag and drop in the folder that holds your movies to add them to the database
+Below are a list of valid commands. Brackets [ ] indicate user input.
 
-'search actor [name] [rating (optional)]' 		returns a list of actors with the given name
-'search director [name] [rating (optional)]' 	returns a list of directors with the given name
-'search genre [genre] [rating (optional)]' 		returns a list of movies with the given genre
-'search movies [rating]' 											returns a list of all movies with a RottenTomatoes Audience Score above [rating]
+To begin, drag and drop in the folder that holds your movies to add them to the database:
+		start [file path]
 
-'play [title]' plays movie with the given title
-'play unseen [genre] [rating (optional)]' plays random movie that you haven't seen from the given genre
+Return a list of actors with the given name:
+		search actor [name] [rating (optional)]		
+Return a list of directors with the given name:
+		search director [name] [rating (optional)]
+Return a list of movies with the given genre:
+		search genre [genre] [rating (optional)]	
+Return a list of all movies with a RottenTomatoes Audience Score above [rating]:	
+		search movies [rating]' 											
 
-'update watched' 			user will be asked which movies they have seen. This improves the 'play unseen [genre] function.
-'update file names' 	user can choose to update movie file names with the correct titles
+Play a movie with the given title:
+		play [title]
+Play a random movie that you haven't seen from the given genre:
+		play unseen [genre] [rating (optional)]
 
-Examples:
-search actor Stallone 60    (note that first or last names can be used. Min movie rating is optional)
-play finding nemo 					(note that names and title searches can be more than 1 word long)
-play unseen com 						(note that partial searches for names and genres are allowed. This will play a comedy)
-
+User will be asked which movies they have seen. This improves the 'play unseen [genre] function:
+		update watched			
+User can choose to update movie file names with the correct titles:
+		update file names 	
+Tips:
+-- rating is an optional argument
+-- partial searches (eg com vs comedy) can be used
+-- searches can be multiple words (eg 'search actor Gary Oldman 60')
 
 ## Contributing
 
