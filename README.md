@@ -65,9 +65,9 @@ User can choose to update movie file names with the correct titles:
 
 
 Tips:
--Rating is an optional argument
--Partial searches (eg com vs comedy) can be used
--Searches can be multiple words (eg 'search actor Gary Oldman 60')
+- Rating is an optional argument
+- Partial searches (eg com vs comedy) can be used
+- Searches can be multiple words (eg 'search actor Gary Oldman 60')
 
 ## Contributing
 
