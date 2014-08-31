@@ -20,25 +20,28 @@ while true
 	if command[0] == 'start'
 		session.find_files_in(command[1..-1].join.gsub("\\", " "))
 
+	elsif command[0] == 'info'
+		session.display_movie_info(command[1..-1].join(" "))
+
 	elsif command[0] == 'search'
 		if command[1] == 'movies'
-			session.list_all_movies(command[2]?command[2]:-1) # sets a default value of -1 for empty rating arguments
+			session.list_all_movies(command[2] ? command[2].to_f : -1) # sets a default value of -1 for empty rating arguments
 
 		elsif command[1] == 'actor'
 			if command[-1] =~ /[0-9]+/
-				session.list_movies_with_actor(command[2..-2].join(" "), command[-1])
+				session.list_movies_with_actor(command[2..-2].join(" "), command[-1].to_f)
 			else
 				session.list_movies_with_actor(command[2..-1].join(" "))
 			end
 		elsif command[1] == 'director'
 			if command[-1] =~ /[0-9]+/
-				session.list_movies_with_director(command[2..-2].join(" "), command[-1])
+				session.list_movies_with_director(command[2..-2].join(" "), command[-1].to_f)
 			else
 				session.list_movies_with_director(command[2..-1].join(" "))
 			end
 		elsif command[1] == 'genre'
 			if command[-1] =~ /[0-9]+/
-				session.list_movies_by_genre(command[2..-2].join(" "), command[-1])
+				session.list_movies_by_genre(command[2..-2].join(" "), command[-1].to_f)
 			else
 				session.list_movies_by_genre(command[2..-1].join(" "))
 			end
@@ -47,7 +50,7 @@ while true
 	elsif command[0] == 'play' 
 		if command[1] == 'unseen'	# distinguish btw the 'play' and 'play unseen genre' functions
 			if command[-1] =~ /[0-9]+/
-				session.play_unseen_genre(command[2..-2].join(" "), command[-1])
+				session.play_unseen_genre(command[2..-2].join(" "), command[-1].to_f)
 			else
 				session.play_unseen_genre(command[2..-1].join(" "))
 			end
@@ -68,6 +71,7 @@ while true
 		puts ""
 		puts "'start [file path]' drag and drop in the folder that holds your movies to add them to the database"
 		puts ""
+		puts "'info [title]' returns information about a movie"
 		puts "'search actor [name] [rating (optional)]' returns a list of actors with the given name"
 		puts "'search director [name] [rating (optional)]' returns a list of directors with the given name"
 		puts "'search genre [genre] [rating (optional)]' returns a list of movies with the given genre"

@@ -4,20 +4,15 @@ module MovieManagerGem
   ### DH Searcher ###
 	class Finder
 		require 'rubygems'
-		require 'rottentomatoes'
+		require 'imdb'
 		require 'sequel'
 		require 'thread'
 		require 'sqlite3'	# sqlite3 implementation
 		# require 'pg'	# postgres implementation
 
-		include RottenTomatoes
-
 		def initialize()
-			# input Rotentomatoes api key
-			Rotten.api_key = "9t2nx4s6bb62s8hvjftx8sx4"
-
 			# start database
-			@@DB = Sequel.sqlite('movies.db')	# sqlite3 implementation
+			@@DB = Sequel.sqlite(File.expand_path('~/.movie_manager_003.db'))	# sqlite3 implementation
 			# @@DB = Sequel.postgres('testdb', :host=>'localhost', :user=>'David', :password=>'password')	# postgres implementation
 
 			# create tables within database
@@ -50,23 +45,12 @@ module MovieManagerGem
 			@movies_dataset.first
 		end
 
-		def refine_unfound_movie_titles
-				# for n in movies where original title == title
-				# puts "What should the title of #{title} be?"
-				# title = gets.chop 
-		end
-
 		def update_file_names
-			# find where movie titles =0. 0=unchecked, 1=correct
-			# for each, ask if title is correct
-			# if yes, dataset.where(:id => each[:id]).update(:correct_filename => 1)
-		  # else
 		  incorrect_names = @movies_dataset.select(:id, :original_title, :title).where(:correct_filename => 0).all
 		  incorrect_names.each do |name|
 		  	puts "Is \"#{name[:title]}\" the correct title for \"#{File.basename(name[:original_title],".*")}\"? \n y/n"
 		  	print '> '
 		  	response = $stdin.gets.chomp.downcase
-				#name[:id] == basename(name[:original_title],".*")
 				case response
 				when 'y','yes'
 					new_title = File.dirname(name[:original_title]) + '/' + name[:title].gsub(/[\.|\_]/," ").gsub(/[\/|:]/,"-") + File.extname(name[:original_title])
@@ -86,17 +70,10 @@ module MovieManagerGem
 					# you'll have to run the command again to continue
 				end
 			end
-
-			# http://sequel.jeremyevans.net/rdoc/files/doc/cheat_sheet_rdoc.html#label-Update%2FDelete+rows
-			# be sure to bake in http://www.ruby-doc.org/core-2.1.2/File.html#method-c-rename
-			#File.rename(old,new)
-			#File.extname(file) gets extension
-			#File.dirname(file)
-			# change db record, change filename
 		end
 
 		def find_files_in(path) # works
-			# should there be a default path? Path to this Dir.
+			# tried using ~/ as the default path. Returned too many unrelated videos.
 			Dir.chdir(path) do
 				enqueue_local_movies
 				add_all_movies_to_table
@@ -126,9 +103,23 @@ module MovieManagerGem
 		end
 
 	### List and Play Movies ###
+		def display_movie_info(title)
+				movie_list = @movie_genre_join.where(Sequel.ilike(:title, '%'+title+'%'), :available => 1).all  # sqlite3 implementation
+				if movie_list.empty?
+					puts "Sorry, couldn't find '#{title}'"
+				else
+					puts "Title: #{movie_list[0][:title]}"
+					puts "Genre(s): #{movie_list.inject([]){|out, movie| out<<movie[:genre]}.join(", ")}"
+					puts "Rating: #{movie_list[0][:imdb_score]}/10"
+					puts "Length: #{movie_list[0][:length]} min."
+					puts "Summary:"
+					puts "#{movie_list[0][:summary]}"
+				end
+		end
+
 		def list_all_movies(min_score=-1) # works
-			movie_list = @movie_director_join.where({:available => 1}, (Sequel.expr(:audience_score) >= min_score)).group(:movies__id).order(:title).all # sqlite3 impementation
-			# movie_list = @movie_directories_join.order(:title).distinct(:movies__id,:title).where({:available => 1}, (Sequel.expr(:audience_score) >= min_score)).all? # postgres implementation
+			movie_list = @movie_director_join.where({:available => 1}, (Sequel.expr(:imdb_score) >= min_score)).group(:movies__id).order(:title).all # sqlite3 impementation
+			# movie_list = @movie_directories_join.order(:title).distinct(:movies__id,:title).where({:available => 1}, (Sequel.expr(:imdb_score) >= min_score)).all? # postgres implementation
 
 			if movie_list.empty?
 				puts "Sorry, we don\'t have any movies with a score higher than #{min_score}"
@@ -158,8 +149,8 @@ module MovieManagerGem
 				@directors_dataset.select(:name).order(:name).all.each {|director| puts '- ' + director[:name]}
 				return
 			end
-			movie_list = @movie_director_join.where({:name => director_name}, {:available => 1},  (Sequel.expr(:audience_score) >= min_score)).group(:movies__id).order(:title).all  # sqlite3 implementation
-			#movie_list = @movie_director_join.order(:title).distinct(:movies__id,:title).where({:name => director_name} & {:available => 1} & (Sequel.expr(:audience_score) >= min_score)).all  # postgres implementation
+			movie_list = @movie_director_join.where({:name => director_name}, {:available => 1},  (Sequel.expr(:imdb_score) >= min_score)).group(:movies__id).order(:title).all  # sqlite3 implementation
+			#movie_list = @movie_director_join.order(:title).distinct(:movies__id,:title).where({:name => director_name} & {:available => 1} & (Sequel.expr(:imdb_score) >= min_score)).all  # postgres implementation
 
 			if movie_list.empty?
 				puts "Sorry, we don\'t have any movies directed by \'#{director_name}\'."
@@ -190,8 +181,8 @@ module MovieManagerGem
 				@actors_dataset.select(:name).order(:name).all.each {|actor| puts '- ' + actor[:name]}
 				return
 			end
-			movie_list = @movie_actor_join.where({:name => actor_name}, {:available => 1}, (Sequel.expr(:audience_score) >= min_score)).group(:movies__id).order(:title).all  # sqlite3 implementation
-			# movie_list = @movie_actor_join.order(:title).distinct(:movies__id,:title).where({:name => actor_name}, {:available => 1}, (Sequel.expr(:audience_score) >= min_score)).all  # postgres implementation
+			movie_list = @movie_actor_join.where({:name => actor_name}, {:available => 1}, (Sequel.expr(:imdb_score) >= min_score)).group(:movies__id).order(:title).all  # sqlite3 implementation
+			# movie_list = @movie_actor_join.order(:title).distinct(:movies__id,:title).where({:name => actor_name}, {:available => 1}, (Sequel.expr(:imdb_score) >= min_score)).all  # postgres implementation
 
 			if movie_list.empty?
 				puts "Sorry, we don\'t have any movies starring \'#{actor_name}\'."
@@ -202,22 +193,26 @@ module MovieManagerGem
 		end
 
 		def list_movies_by_genre(genre, min_score = -1) # works
-			movie_list = @movie_genre_join.where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:audience_score) >= min_score)).group(:movies__id).order(:title).all  # sqlite3 implementation
-			# movie_list = @movie_genre_join.order(:title).distinct(:movies__id,:title).where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:audience_score) >= min_score)).all # postgres implementation
+			movie_list = @movie_genre_join.where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1}).group(:movies__id).order(:title).all  # sqlite3 implementation  & (Sequel.expr(:imdb_score) >= min_score)
+			# movie_list = @movie_genre_join.order(:title).distinct(:movies__id,:title).where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:imdb_score) >= min_score)).all # postgres implementation
 
 			if movie_list.empty?
 				puts 'Sorry, we don\'t have that genre. Please enter one from the list:'
 				@genres_dataset.select(:genre).order(:genre).all.each {|genre| puts '- ' + genre[:genre]}
+			elsif movie_list.select {|movie| movie[:imdb_score] >= min_score}.empty?
+				puts "Sorry, couldn't find any movies with genre #{movie_list[0][:genre]} and a rating above #{min_score}"
 			else
 				search_genre = movie_list.first[:genre]
-				puts "--- Movies with genre '#{search_genre}' ---"
-				movie_list.each{ |movie| puts movie[:title]} 
+				print "--- Movies with genre '#{search_genre}' "
+				print "rated above #{min_score} " if min_score != -1
+				puts "---"
+				movie_list.select {|movie| movie[:imdb_score] >= min_score}.each{ |movie| puts movie[:title]} 
 			end
 		end
 
 		def play_unseen_genre(genre, min_score = -1) # works
-			movie_genre_list = @movie_genre_join.where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:audience_score) >= min_score)).group(:movies__id).all  # sqlite3 implementation
-			# movie_genre_list = @movie_genre_join.order(:title).distinct(:movies__id,:title).where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:audience_score) >= min_score)).all  # postgres implementation
+			movie_genre_list = @movie_genre_join.where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:imdb_score) >= min_score)).group(:movies__id).all  # sqlite3 implementation
+			# movie_genre_list = @movie_genre_join.order(:title).distinct(:movies__id,:title).where(Sequel.ilike(:genre, '%'+genre+'%') & {:available => 1} & (Sequel.expr(:imdb_score) >= min_score)).all  # postgres implementation
 			if movie_genre_list.empty?
 				puts "Sorry, we don\'t have any movies with the genre #{genre}."
 				# this exception doesn't reveal if there are no movies of that genre above the minimum score
@@ -261,16 +256,15 @@ module MovieManagerGem
 		end
 
 	### Movie-handling fuctions ###
-
 		def enqueue_local_movies 	# works
 			movies_glob = Dir.glob('**/*.{mkv,MKV,avi,AVI,mp4,MP4,mpg,MPG,mov,MOV}').uniq
 			movies_glob.each {|movie| @local_movies_queue << [File.absolute_path(movie), normalize_title(movie), nil]}
-			#movies.select!{|movie| File.size(movie) > 600_000_000} # works
+			# movies.select!{|movie| File.size(movie) > 600_000_000} # works
 		end
 
 		def normalize_title(title) # works
-			# output should seperate path, suffix. Change periods and underscores to spaces. Possibly change / to : 
-			File.basename(title,'.*').gsub(/[\.|\_]/," ").gsub(/[\/|:]/,"-")
+			# output should seperate path, suffix. Change . and _ to spaces. Replace / and : with - to be unix-safe. remove anything in brackets or braces.
+			File.basename(title,'.*').gsub(/[\.|\_]/," ").gsub(/[\/|:]/,"-").gsub(/[\[|\{].*[\]|\}]/, "")
 		end
 
 		def update_directories_status # works 
@@ -287,8 +281,8 @@ module MovieManagerGem
 			@movies_dataset.where(:title => movie_title).update(:watched => status)
 		end
 
-		def add_all_movies_to_table	# works # add func to auto-find/add new movies. may need to rework enqueue_local_movies to output array
-			# RottenTomatoes' API seems to error at >3 threads
+		def add_all_movies_to_table	# works 
+		# add func to auto-find/add new movies. 
 			2.times do
 				# this code was supplied by Theo on SO
 				# http://stackoverflow.com/questions/6558828/thread-and-queue
@@ -300,7 +294,7 @@ module MovieManagerGem
 								movie_title = @movies_dataset.select(:title).where(:original_title => long_name).first[:title]
 								puts "#{movie_title} record already exists"
 							else
-								data = get_rt_movie_info(clean_name)
+								data = get_imdb_movie_info(clean_name)
 								@processed_movies_queue << [long_name, clean_name, data]
 								add_movie(@processed_movies_queue.pop)
 							end
@@ -313,26 +307,26 @@ module MovieManagerGem
 
 		def add_movie((long_name, clean_name, data)) # works
 			if data
-
-				# Add Directories to directories_dataset
+				# Add Directory to directories_dataset
 				@directories_dataset.insert(:directory_path =>  File.dirname(long_name)) unless directories_record_exists?(File.dirname(long_name))
 
 				# Add Movie to movies_dataset
 				@movies_dataset.insert( :original_title => long_name, 
-					:title => data.title,
-					:critic_score => data.ratings.critics_score,
-					:audience_score => data.ratings.audience_score,
+					:title => data.title[0..-8],
+					:imdb_score => data.rating,
+					:summary => data.plot_summary||'No summary available',
+					:length => data.length||-1,
 					:date_added => Time.new(),
 					:directory_id => @directories_dataset.select(:id).where(:directory_path => File.dirname(long_name)).first[:id])
 
-				movie_id = @movies_dataset.select(:id).where(:title => data.title).first[:id]
+				movie_id = @movies_dataset.select(:id).where(:title => data.title[0..-8]).first[:id]
 
 				# Add Actors to actors_dataset and movie_actor_dataset
-				data.abridged_cast.each do |actor| 
-					@actors_dataset.insert(:name => actor[:name]) unless actors_record_exists?(actor[:name]) # used to be :name => actor.name. Make sure this works online!
+				data.cast_members.each do |actor| 
+					@actors_dataset.insert(:name => actor) unless actors_record_exists?(actor) # used to be :name => actor.name. Make sure this works online!
 					@movie_actor_dataset.insert(:movie_id => movie_id,
-						:actor_id => @actors_dataset.select(:id).where(:name => actor[:name]).first[:id])
-				end if data.abridged_cast
+						:actor_id => @actors_dataset.select(:id).where(:name => actor).first[:id])
+				end if data.cast_members
 
 				# Add Genres to genres_dataset and movie_genre_dataset
 				data.genres.each do |genre| 
@@ -342,13 +336,15 @@ module MovieManagerGem
 				end if data.genres
 
 				# Add Directors to directors_dataset and movie_director_dataset 
-				data.abridged_directors.each do |director|   
-					@directors_dataset.insert(:name => director[:name]) unless directors_record_exists?(director[:name])
-					@movie_director_dataset.insert(:movie_id => movie_id,
-						:director_id => @directors_dataset.select(:id).where(:name => director[:name]).first[:id])
-				end if data.abridged_directors
+				data.director.each do |director|  
+					if director != "(more)"	# compensates for a bug in imdb gem. Pull request submitted.
+						@directors_dataset.insert(:name => director) unless directors_record_exists?(director)
+						@movie_director_dataset.insert(:movie_id => movie_id,
+							:director_id => @directors_dataset.select(:id).where(:name => director).first[:id])
+					end
+				end if data.director
 
-				puts "#{data.title} added to table" 
+				puts "#{data.title[0..-8]} added to table" 
 
 			else
 				@movies_dataset.insert(:original_title => long_name, :title => clean_name, :date_added => Time.new())
@@ -356,28 +352,14 @@ module MovieManagerGem
 			end
 		end
 
-		def get_rt_movie_info(clean_name) # works
-			# with internet
-			begin
-				output = RottenMovie.find(:title => clean_name, :expand_results => true, :limit => 1)	# hits RT once to get general movie info
-				sleep 1
-				output = RottenMovie.find(:id => output.id)	if output.class == PatchedOpenStruct # hits RT a second time with id# to get most detailed info :(
-			rescue		# addresses the occasional crash that RT limits plus our volume of calls can bring on.
-				sleep 1
-				output = RottenMovie.find(:title => clean_name, :expand_results => true, :limit => 1)	# hits RT once to get general movie info
-				sleep 1
-				output = RottenMovie.find(:id => output.id)	if output.class == PatchedOpenStruct # hits RT a second time with id# to get most detailed info :(
-			end			
-			return output if output.class == PatchedOpenStruct
+		def get_imdb_movie_info(clean_name) # works
+			i = Imdb::Search.new(clean_name)
+			return i.movies.first	if i.movies.first.class == Imdb::Movie
 			return nil
-
-			# without internet (local offline testing)
-			# output = FakeMovie.new(clean_name)
-			# return output
 		end
 
 
-	### Exists? ###
+### Exists? ###
 	def movies_record_exists?(original)	
 		return false if @movies_dataset.select(:id).where(:original_title => original).all.length == 0 
 		return true
@@ -403,19 +385,19 @@ module MovieManagerGem
 		return true
 	end
 
-	### Tables & DBs ###
+### Tables & DBs ###
 	def create_all_tables
-		create_directories_table 	unless @@DB.table_exists?(:directories)
+		create_directories_table 		unless @@DB.table_exists?(:directories)
 
-		create_movies_table 		unless @@DB.table_exists?(:movies)
+		create_movies_table 				unless @@DB.table_exists?(:movies)
 
-		create_genres_table 		unless @@DB.table_exists?(:genres)
-		create_movie_genre_table 	unless @@DB.table_exists?(:movie_genre)
+		create_genres_table 				unless @@DB.table_exists?(:genres)
+		create_movie_genre_table 		unless @@DB.table_exists?(:movie_genre)
 
-		create_actors_table 		unless @@DB.table_exists?(:actors)
-		create_movie_actor_table 	unless @@DB.table_exists?(:movie_actor)
+		create_actors_table 				unless @@DB.table_exists?(:actors)
+		create_movie_actor_table 		unless @@DB.table_exists?(:movie_actor)
 
-		create_directors_table 		unless @@DB.table_exists?(:directors)
+		create_directors_table 			unless @@DB.table_exists?(:directors)
 		create_movie_director_table unless @@DB.table_exists?(:movie_director)
 	end
 
@@ -427,13 +409,14 @@ module MovieManagerGem
 				primary_key :id
 				String  	:original_title
 				String  	:title
-				  Integer	:critic_score, 		:default => -1 	#1-100
-				  Integer	:audience_score, 	:default => -1 	#1-100
-				  Integer 	:my_score, 			:default => -1 	#1-100
-				  Integer 	:correct_filename, 	:default => 0  	#0/no, 1/yes
-				  Integer 	:watched, 			:default => -1 	#-1/unknown, 0/no, 1/yes
-				  String  	:date_added
-				  Integer 	:directory_id 
+			  Float			:imdb_score, 				:default => -1 	#1-100
+			  Float 		:my_score, 					:default => -1 	#1-100
+			  Integer 	:correct_filename, 	:default => 0  	#0/no, 1/yes
+			  Integer 	:watched, 					:default => -1 	#-1/unknown, 0/no, 1/yes
+			  String 		:summary,						{:text => true, :default => 'No summary available.'}
+			  Integer 	:length,						:default => -1
+			  String  	:date_added
+			  Integer 	:directory_id 
 				end 
 			end
 		end
@@ -539,90 +522,4 @@ module MovieManagerGem
 			end
 		end
 	end
-
-	class FakeMovie 	# works
-		# returns results when testing offline
-		attr_reader :title, :ratings, :critics_score, :audience_score, :my_score, :genres, :abridged_directors, :abridged_cast, :correct_filename, :watched, :name
-		def initialize(movie_title)
-			sleep 2 # you have to wait for RT, you have to wait for me!
-
-			@random							= Random.new
-			@title 							= movie_title.upcase
-			@my_score 					= @random.rand(100)+1
-			@genres 						= %w(Comedy Documentary Drama Horror Western XXX).sample(@random.rand(3)+1)
-			@correct_filename 	= @random.rand(2)
-			@watched 						= @random.rand(2)
-
-			# cast & director names
-			@first 							= %w(Abe Bob Carl Dolf Earl)
-			@last 							= %w(Buler Crabtree Daniels McDonald)
-
-			# ratings
-			@critics_score 			= 101
-			@audience_score 		= 101
-		end
-
-		def ratings
-			return self
-		end
-
-		def abridged_cast
-			out = []
-			(@random.rand(5)+1).times do
-				out << {name: @first.sample + ' ' + @last.sample }
-			end
-			return out
-		end
-
-		def abridged_directors
-			out = []
-			(@random.rand(3)+1).times do
-				out << {name: 'Director ' + @last.sample }
-			end
-			return out
-		end
-	end
-
-#### TO DO: ####
-#
-# some directories are listed as NULL. Find out why and fix it.
-#
-# X add directories DB
-# X - add "directory present?" column to movies DB 0/1
-# X - add "directory_present?" function to update dir status, runs on initialization. We assume no devices are being removed within a session.
-# X - add "directory_present => 1" to all existing searches
-#
-# X update add_all_movies_to_table. Auto-find/add new movies. 
-#
-# X if RT call fails, restart and continue. 
-#
-# X add ARGV for command line input, woo! Look into Thor to help list commands
-#
-# X Let user specify directory root. use Dir.chdir(new_dir). Volume can be dragged and dropped in. request on init.
-#
-# X func search by actor/director 
-# X improve act/dir search with last name refinement
-#
-# Look into using Find instead of Dir.glob to allow the user to exclude some folders. 
-# http://ruby-doc.org/stdlib-1.9.3/libdoc/find/rdoc/Find.html
-# can maybe also use reject on glob
-# http://stackoverflow.com/questions/4505566/is-there-a-way-to-glob-a-directory-in-ruby-but-exclude-certain-directories
-#
-# X func is x the correct name? y/n
-#
-# swtich back to sqlite3 to make this a one click startup.
-#
-# X create a setup command. if db is empty, spcify a dir to look in, add movies, update dirs. 
-#
-# X consider filtering actor/dir results if dir is unattached
-# consider tracking play count rather than having it be binary
-# consider making better use of the directory & origial movie name combo. feels redundant. 
-#
-# X func update file names to reflect correct titles. Will need to be unix-safe
-# http://superuser.com/questions/358855/what-characters-are-safe-in-cross-platform-file-names-for-linux-windows-and-os
-# 
-# put on the web.
-# Add filetypes. 
-# How to deal with file being renamed by user?
-# Look at 'index on expressions'
 end

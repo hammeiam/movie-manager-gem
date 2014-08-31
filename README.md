@@ -2,7 +2,8 @@
 
 DH Movie Manager is a command line tool for organizing local movie files. 
 
-DHMM finds local movie files, queies Rotten Tomatoes, and stores the data in a sqlite3 database that you can use to run commands. Search for specific actors, directors, and genres. Filter results by audience score. Update your filenames to reflect the correct title. 
+DHMM finds local movie files, queies IMDB, and stores the data in a sqlite3 database that you can use to run commands. Search for specific actors, directors, and genres. Filter results by audience score. Update your filenames to reflect the correct title. 
+
 Feeling indecisive? use the 'play unseen [genre]' command to play a random movie that suits your mood.
 
 ## Installation
@@ -28,9 +29,13 @@ From your home directory, simply run:
 ## Usage
 Below are a list of valid commands. Brackets indicate user input (don't use brackets when inputing arguments).
 
-To begin, drag and drop in the folder that holds your movies to add them to the database:
+If this is the first time using DHMM, you will be asked to tell the program where to find your movie files (trust me when I say you don't want the program looking through your entire harddrive). Using the 'start' command, drag and drop in the folder that holds your movies to add them to the database:
 
 		start [file path]
+
+See information about a particular movie:
+
+		info [title]
 
 Return a list of actors with the given name:
 
@@ -46,7 +51,7 @@ Return a list of movies with the given genre:
 
 Return a list of all movies with a RottenTomatoes Audience Score above [rating]:	
 
-		search movies [rating]' 											
+		search movies [rating]										
 
 
 Play a movie with the given title:
@@ -71,6 +76,14 @@ Tips:
 - Rating is an optional argument
 - Partial searches (eg com vs comedy) can be used
 - Searches can be multiple words (eg 'search actor Gary Oldman 60')
+
+## New in Version 0.0.3
+- Switched from Rotten Tomatoes to IMDB. This allows for accurate results from less precise file names.
+- IMPORTANT! Changed database structure to include length, summary, and IMDB's ratings. This means we have to re-index your movies. 
+- Added 'info' function to see all the relevant info about a given movie
+- Updated /bin file to include this functionality
+- Added versions to gem requirements, generally made code a little cleaner (removing empty methods, unnecessary comments)
+- Improved feedback when unable to find movies of a given genre above a given rating
 
 ## Contributing
 
